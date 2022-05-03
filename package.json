@@ -1,6 +1,6 @@
 {
   "name": "dtl",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Directory TempLate engine. Geneartes directories by predefined templates",
   "main": "dtl.mjs",
   "scripts": {
@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/fritylo/dtl#readme",
   "dependencies": {
+    "chalk": "^5.0.1",
     "yargs": "^17.4.1"
   }
 }
