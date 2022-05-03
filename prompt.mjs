@@ -15,3 +15,14 @@ export async function prompt(question) {
       rl.question(question, response => res(response));
    });
 }
+
+export async function ask(question, yesCallback, noCallback) {
+   let response = await prompt(question);
+   if (/y(es)?/i.test(response)) {
+      await yesCallback();
+      return true;
+   } else {
+      await noCallback();
+      return false;
+   }
+}

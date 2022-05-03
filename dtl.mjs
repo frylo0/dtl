@@ -1,14 +1,14 @@
 /** 
  * @package Directory TempLate creator
- */
-
-/*
  * Author:  Fedor Nikonov (fritylo)
  * Date:    03.05.2022 16:05:46
  * Company: frity corp.
-*/
+ */
    
-import { prompt } from './prompt.mjs';
+
+import { ask } from './prompt.mjs';
+import { genWarn, logError, logInfo, logOk } from './logger.mjs';
+import { ERROR } from './errors.mjs';
 
 import fs from 'fs';
 import os from 'os';
@@ -21,27 +21,8 @@ import chalk from 'chalk'
 
 
 const TPL_FOLDER_NAME = 'DirectoryTemplates';
-
-
-const ERROR = {
-   TPL_NOT_EXIST: 'tpl-not-exist',
-   USING_NOT_EXISTING: 'using-not-existing',
-   USING_DIRECTORY: 'using-directory',
-};
-Object.defineProperties(ERROR, {
-   matchAny: {
-      enumerable: false,
-      value: (string) => {
-         for (let prop in ERROR) {
-            if (string === ERROR[prop])
-               return true;
-         }
-         return false;
-      }
-   }
-});
-
 const TPL_FOLDER = path.join(os.homedir(), TPL_FOLDER_NAME);
+
 
 function kebabize(str) {
    return str.replace(/[A-Z]+(?![a-z])|[A-Z]/g, ($, ofs) => (ofs ? "-" : "") + $.toLowerCase());
@@ -53,15 +34,15 @@ function relatizePath(filenameAbs) {
 
 function checkTemplateExists(templateName, checkContext = '') {
    const TARGET_TPL_FOLDER = getTemplatePath(templateName);
+   const isExist = fs.existsSync(TARGET_TPL_FOLDER);
 
-   if (!fs.existsSync(TARGET_TPL_FOLDER)) {
-      console.log(
-         `${chalk.red('\nError: ')}Template "${chalk.blue(templateName)}" doesn't exist, ${chalk.grey(TARGET_TPL_FOLDER)}` + 
-         (checkContext !== '' ? ('\n' + chalk.red('Context: ' + checkContext)) : '')
-      );
-      return false;
-   } else
-      return true;
+   if (!isExist) {
+      logError(
+         `Template "${chalk.blue(templateName)}" doesn't exist`,
+      TARGET_TPL_FOLDER, checkContext);
+
+      throw new Error(ERROR.TPL_NOT_EXIST);
+   }
 }
 
 function getTemplatePath(templateName) {
@@ -79,30 +60,35 @@ function insertData(string, name) {
       .replace(/([ \t]*?)-- From (.*?): Use (.*?); --/g, (...match) => {
          const [fulltext, indent, templateName, filePath] = match;
 
-         if (!checkTemplateExists(templateName, `-- From ${templateName}: Use ${filePath}; --`))
-            throw new Error(ERROR.TPL_NOT_EXIST);
+         checkTemplateExists(templateName, `-- From ${templateName}: Use ${filePath}; --`);
          
          const templateDir = getTemplatePath(templateName);
          const filePathAbs = path.join(templateDir, filePath);
 
          if (!fs.existsSync(filePathAbs)) {
-            console.log(
-               chalk.red('\nError: ') + 'Can not use file that not exist - ' + chalk.grey(filePathAbs) +
-               '\n' + chalk.red('Context: ' + fulltext.trim())
-            );
+            logError(
+               `Can not use file that not exist`,
+            filePathAbs, fulltext.trim());
+            
             throw new Error(ERROR.USING_NOT_EXISTING);
-         } else if (fs.statSync(filePathAbs).isDirectory()) {
-            console.log(
-               chalk.red('\nError: ') + 'Can not use directory - ' + chalk.grey(filePathAbs) +
-               '\n' + chalk.red('Context: ' + fulltext.trim())
-            );
+         } 
+         else if (fs.statSync(filePathAbs).isDirectory()) {
+            logError(
+               `Can not use directory`,
+            filePathAbs, fulltext.trim());
+
             throw new Error(ERROR.USING_DIRECTORY);
          }
+
          else {
             let content = fs.readFileSync(filePathAbs).toString();
-            content = content.split('\n').map(line => indent + line).join('\n'); // indent all lines
-            content = insertData(content, name);
-            return content;
+            
+            content = content
+               .split('\n')
+               .map(line => indent + line)
+               .join('\n'); // indent all lines
+
+            return insertData(content, name);
          }
       })
 
@@ -115,44 +101,27 @@ function insertData(string, name) {
 }
 
 async function instantiate(dirpathSrc, dirpathTarget) {
-   try {
-      dirpathTarget = insertData(dirpathTarget, this)
-   } catch (err) {
-      if (ERROR.matchAny(err.message))
-         return;
-      else throw err;
-   }
+   dirpathTarget = insertData(dirpathTarget, this)
    
    for (let filename of fs.readdirSync(dirpathSrc)) {
       if (filename === '.' || filename == '..')
          continue;
 
       const filepathSrc = path.join(dirpathSrc, filename);
-
-      let filepathTarget;
-      try {
-         filepathTarget = path.join(dirpathTarget, insertData(filename, this));
-      } catch (err) {
-         if (ERROR.matchAny(err.message))
-            return;
-         else throw err;
-      }
+      const filepathTarget = path.join(dirpathTarget, insertData(filename, this));
+      const filepathTargetRel = `./${relatizePath(filepathTarget)}`;
 
       const stat = fs.statSync(filepathSrc);
       const isExists = fs.existsSync(filepathTarget);
 
       if (stat.isDirectory()) {
          if (isExists) {
-            let response = await prompt(
-               chalk.yellow('\nWarn: ') + 'Target directory exists - ' + chalk.grey('./' + relatizePath(filepathTarget)) + 
-               '\n      Replace? (yes|no|y|n): ');
-            if (/y(es)?/i.test(response)) {
+            await ask(genWarn(['Target directory exists',  'Replace? (yes|no|y|n): '], filepathTargetRel),
+            () => {
                fs.rmSync(filepathTarget, {recursive: true});
                fs.mkdirSync(filepathTarget);
-            }
-            else {
-               console.log(chalk.grey('Replacement skipped. Walking deeper...'));
-            }
+            },
+            () => logInfo('Replacement skipped. Walking deeper...'));
          } else {
             fs.mkdirSync(filepathTarget);
          }
@@ -163,55 +132,58 @@ async function instantiate(dirpathSrc, dirpathTarget) {
          let isRewriteAllowed = true;
          
          if (isExists) {
-            let response = await prompt(
-               chalk.yellow('\nWarn: ') + 'Target file exists - ' + chalk.grey('./' + relatizePath(filepathTarget)) + 
-               '\n      Rewrite? (yes|no|y|n): ');
-            if (/y(es)?/i.test(response))
-               isRewriteAllowed = true;
-            else {
-               isRewriteAllowed = false;
-               console.log(chalk.grey('Rewriting skipped...'));
-            }
+            await ask(genWarn(['Target file exists', 'Rewrite? (yes|no|y|n): '], filepathTargetRel),
+            () => { isRewriteAllowed = true },
+            () => { isRewriteAllowed = false;
+               logInfo('Rewriting skipped...');
+            });
          }
 
          if (isRewriteAllowed) {
-            let content = fs.readFileSync(filepathSrc).toString();
-            try {
-               content = insertData(content, this);
-            } catch (err) {
-               if (ERROR.matchAny(err.message))
-                  return;
-               else throw err;
-            }
+            let content;
+            
+            content = fs.readFileSync(filepathSrc).toString();
+            content = insertData(content, this);
+            
             fs.writeFileSync(filepathTarget, content);
          }
       }
    }
 }
 
+
 if (!fs.existsSync(TPL_FOLDER)) {
    fs.mkdirSync(TPL_FOLDER, {recursive: true});
 }
 
 yargs(hideBin(process.argv))
+
    .command('new [templateName] [folderName]', 'creates directory with template contents', 
       yargs => yargs
-         .positional('templateName', {describe: `name of template folder from "${TPL_FOLDER}"`})
-         .demandOption('templateName')
-         .positional('folderName', {describe: 'name of folder to be created'})
-         .demandOption('folderName'),
-      async argv => {
-         if (!checkTemplateExists(argv.templateName))
-            return;
+      
+      .positional('templateName', {
+         describe: `name of template folder from "${TPL_FOLDER}"`
+      }).demandOption('templateName')
+      .positional('folderName', {
+         describe: 'name of folder to be created'
+      }) .demandOption('folderName'),
 
-         await instantiate.bind(argv.folderName)(
-            getTemplatePath(argv.templateName), 
-            process.cwd()
-         );
+      async argv => {
+         try {
+            checkTemplateExists(argv.templateName);
+
+            await instantiate.bind(argv.folderName)(
+               getTemplatePath(argv.templateName), 
+               process.cwd()
+            );
+
+            logOk(`\nSuccessfully!\n`);
+         } catch (err) {
+            if (!ERROR.matchAny(err.message))
+               throw err;
+            console.log();
+         }
          
-         console.log(
-            chalk.green(`\nSuccessfully!\n`)
-         );
          process.exit();
       })
 
