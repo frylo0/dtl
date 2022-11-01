@@ -27,6 +27,9 @@ const TPL_FOLDER = path.join(os.homedir(), TPL_FOLDER_NAME);
 function kebabize(str) {
    return str.replace(/[A-Z]+(?![a-z])|[A-Z]/g, ($, ofs) => (ofs ? "-" : "") + $.toLowerCase());
 }
+function camelcase(str) {
+   return str.slice(0, 1).toLowerCase() + str.slice(1);
+}
 
 function relatizePath(filenameAbs) {
    return path.relative(process.cwd(), filenameAbs);
@@ -94,6 +97,7 @@ function insertData(string, name) {
 
       .replace(/--Name--/g, name)
       .replace(/--name--/g, name.toLowerCase())
+      .replace(/--naMe--/g, camelcase(name))
       .replace(/--NAME--/g, name.toUpperCase())
       .replace(/--na-me--/g, kebabize(name))
       
