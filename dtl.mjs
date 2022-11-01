@@ -162,6 +162,19 @@ if (!fs.existsSync(TPL_FOLDER)) {
 
 yargs(hideBin(process.argv))
 
+   .command('list', 'show all available templates',
+      yargs => yargs,
+
+      async () => {
+         const templates = fs.readdirSync(TPL_FOLDER);
+         
+         console.log();
+         for (const name of templates)
+            console.log(`- ${name}`);
+         
+         process.exit();
+      })
+
    .command('new [templateName] [folderName]', 'creates directory with template contents', 
       yargs => yargs
       
