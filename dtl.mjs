@@ -6,9 +6,11 @@
  */
    
 
-import { ask } from './prompt.mjs';
-import { genWarn, logError, logInfo, logOk } from './logger.mjs';
-import { ERROR } from './errors.mjs';
+import { ask } from './utils/prompt.mjs';
+import { ERROR } from './utils/errors.mjs';
+import { loadConfig } from './utils/load-config.mjs';
+import { genWarn, logError, logInfo, logOk } from './utils/logger.mjs';
+import { camelcase, kebabcase, lowercase, uppercase } from './utils/syntax.mjs';
 
 import fs from 'fs';
 import os from 'os';
@@ -19,17 +21,14 @@ import { hideBin } from 'yargs/helpers';
 
 import chalk from 'chalk'
 
+import runNew from './commands/new.mjs';
+import runList from './commands/list.mjs';
 
-const TPL_FOLDER_NAME = 'DirectoryTemplates';
-const TPL_FOLDER = path.join(os.homedir(), TPL_FOLDER_NAME);
 
+const config = loadConfig();
 
-function kebabize(str) {
-   return str.replace(/[A-Z]+(?![a-z])|[A-Z]/g, ($, ofs) => (ofs ? "-" : "") + $.toLowerCase());
-}
-function camelcase(str) {
-   return str.slice(0, 1).toLowerCase() + str.slice(1);
-}
+export const TPL_FOLDER = config["Templates location"];
+
 
 function relatizePath(filenameAbs) {
    return path.relative(process.cwd(), filenameAbs);
@@ -96,19 +95,26 @@ function insertData(string, name) {
       })
 
       .replace(/--Name--/g, name)
-      .replace(/--name--/g, name.toLowerCase())
+      .replace(/--name--/g, lowercase(name))
       .replace(/--naMe--/g, camelcase(name))
-      .replace(/--NAME--/g, name.toUpperCase())
-      .replace(/--na-me--/g, kebabize(name))
+      .replace(/--NAME--/g, uppercase(name))
+      .replace(/--na-me--/g, kebabcase(name))
       
       .replace(/--DateTime--/g, `${year}-${month}-${day}, ${now.toLocaleTimeString()}`);
 }
 
+/**
+ * Recursively create files by given template path in target folder.
+ * @param {string} dirpathSrc Absolute path to template directory.
+ * @param {string} dirpathTarget Relative path to target dir in current base directory.
+ * @this {string} Base directory for relative dirpathTarget path. Usually `process.cwd()`.
+ */
 async function instantiate(dirpathSrc, dirpathTarget) {
    dirpathTarget = insertData(dirpathTarget, this)
    
+   // For each file in current folder
    for (let filename of fs.readdirSync(dirpathSrc)) {
-      if (filename === '.' || filename == '..')
+      if (filename === '.' || filename == '..') // Skip relative dirs
          continue;
 
       const filepathSrc = path.join(dirpathSrc, filename);
@@ -116,10 +122,10 @@ async function instantiate(dirpathSrc, dirpathTarget) {
       const filepathTargetRel = `./${relatizePath(filepathTarget)}`;
 
       const stat = fs.statSync(filepathSrc);
-      const isExists = fs.existsSync(filepathTarget);
+      const isTargetExists = fs.existsSync(filepathTarget);
 
-      if (stat.isDirectory()) {
-         if (isExists) {
+      if (stat.isDirectory()) { // if directory
+         if (isTargetExists) {
             await ask(genWarn(['Target directory exists',  'Replace? (yes|no|y|n): '], filepathTargetRel),
             () => {
                fs.rmSync(filepathTarget, {recursive: true});
@@ -135,7 +141,7 @@ async function instantiate(dirpathSrc, dirpathTarget) {
       else { // is file
          let isRewriteAllowed = true;
          
-         if (isExists) {
+         if (isTargetExists) {
             await ask(genWarn(['Target file exists', 'Rewrite? (yes|no|y|n): '], filepathTargetRel),
             () => { isRewriteAllowed = true },
             () => { isRewriteAllowed = false;
@@ -162,44 +168,39 @@ if (!fs.existsSync(TPL_FOLDER)) {
 
 yargs(hideBin(process.argv))
 
-   .command('list', 'show all available templates',
-      yargs => yargs,
+   .command('list', 'Show all available templates', yargs => yargs,
+      runList)
 
-      async () => {
-         const templates = fs.readdirSync(TPL_FOLDER);
-         
-         console.log();
-         for (const name of templates)
-            console.log(`- ${name}`);
-         
-         process.exit();
-      })
-
-   .command('new [templateName] [folderName]', 'creates directory with template contents', 
-      yargs => yargs
-      
+   .command('new <templateName> <folderName>', 'Creates directory with template contents', yargs => yargs
       .positional('templateName', {
-         describe: `name of template folder from "${TPL_FOLDER}"`
-      }).demandOption('templateName')
+         describe: `Name of template folder from "${TPL_FOLDER}"`
+      })
       .positional('folderName', {
-         describe: 'name of folder to be created'
-      }) .demandOption('folderName'),
+         describe: 'Name of folder to be created'
+      }),
+
+      runNew)
+
+   .command('def <name> <files..>', 'Creates new template from given files', yargs => yargs
+      .positional('name', {
+         describe: `Name in pascal case to be replaced in given files in all available DTL cases`
+      })
+      .positional('files', {
+         describe: 'Files to be added to template, usually you will add a single folder. All given files will be placed into template root.'
+      }),
 
       async argv => {
-         try {
-            checkTemplateExists(argv.templateName);
-
-            await instantiate.bind(argv.folderName)(
-               getTemplatePath(argv.templateName), 
-               process.cwd()
-            );
-
-            logOk(`\nSuccessfully!\n`);
-         } catch (err) {
-            if (!ERROR.matchAny(err.message))
-               throw err;
-            console.log();
-         }
+         logOk(`\nSuccessfully!\n`);
+         
+         const cwd = process.cwd();
+         const files = argv.files.map(file => ({
+            absPath: path.join(cwd, file),
+            basename: path.basename(path.join(cwd, file)),
+         }));
+         const name = argv.name;
+         
+         const dump = d => console.log(...(Object.entries(d).map(([n, v], i, arr) => [i !== 0 ? '\n' : '', `• ${n} =`, v])).reduce((p, c) => p.concat(c)));
+         dump({name, files});
          
          process.exit();
       })

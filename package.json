@@ -1,10 +1,12 @@
 {
   "name": "dtl",
-  "version": "0.2.1",
-  "description": "Directory TempLate engine. Geneartes directories by predefined templates",
+  "version": "0.3.1",
+  "description": "Directory TempLate engine. Generates directories by predefined templates",
   "main": "dtl.mjs",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "dtl": "node ./dtl.mjs"
   },
   "repository": {
     "type": "git",
@@ -17,7 +19,12 @@
   },
   "homepage": "https://github.com/fritylo/dtl#readme",
   "dependencies": {
-    "chalk": "^5.0.1",
+    "chalk": "^5.1.2",
     "yargs": "^17.4.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.2.4",
+    "babel-jest": "^29.3.1",
+    "jest": "^29.3.1"
   }
 }
