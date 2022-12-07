@@ -26,30 +26,3 @@ export function createTestingFolderScope(pathToFolder) {
         return path.resolve(__dirname, pathToFolder, pathToLocalFolder);
     };
 }
-
-
-// May be useful
-
-export function mockTemplateFolder(relativeFolderPath) {
-    const TPL_FOLDER = {
-        fn: jest.fn(),
-        set(relativePath) {
-            this.fn.mockReturnValue(relativePath);
-        },
-    }
-    
-    TPL_FOLDER.set(relativeFolderPath);
-
-    jest.unstable_mockModule('../dtl.mjs', () => ({
-        get TPL_FOLDER() {
-            return path.resolve(__dirname, TPL_FOLDER.fn());
-        },
-    }));
-    
-    return TPL_FOLDER;
-}
-
-export async function importDefault(modulePath) {
-    const module = await import(path.join('../commands', modulePath));
-    return module.default;
-}
