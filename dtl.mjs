@@ -25,8 +25,9 @@ if (!fs.existsSync(config.TPL_FOLDER)) {
 }
 
 
-yargs(hideBin(process.argv))
+const theYargs = yargs(hideBin(process.argv));
 
+theYargs
    .command('list', 'Show all available templates', yargs => yargs,
       (argv) => $list(argv, config))
 
@@ -41,20 +42,21 @@ yargs(hideBin(process.argv))
       (argv) => $new(argv, config))
 
 
-   .command('def <templateName> <name> [files..]', 'Creates new template from given files', yargs => yargs
+   .command('def <templateName> <name> [files..]', 'Creates new template from given files. If no files given looks for folder with <name> to use it as base of template', yargs => yargs
       .positional('templateName', {
-         describe: `The name of result template`
+         describe: `The name of result template. If no files provided, also directory to be used as template base.`
       })
       .positional('name', {
-         describe: `Name in pascal case to be replaced in given files in all available DTL cases`
+         describe: `Name in pascal case to be replaced in given files in all available DTL cases.`
       })
       .positional('files', {
          describe: 'Files to be added to template, usually you will add a single folder. All given files will be placed into template root.'
       }),
       (argv) => $def(argv, config))
 
-      
-   .parse();
+theYargs
+   .wrap(theYargs.terminalWidth())
+   .parse() ;
 
 // TODO: Use yargs in tests to work with commands
 // TODO: Add tests to file exists cases
