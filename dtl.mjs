@@ -10,7 +10,7 @@ import { loadConfig } from './utils/load-config.mjs';
 
 import fs from 'fs';
 
-import yargs from 'yargs';
+import yargsCore from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import $new from './commands/new.mjs';
@@ -25,9 +25,9 @@ if (!fs.existsSync(config.TPL_FOLDER)) {
 }
 
 
-const theYargs = yargs(hideBin(process.argv));
+const yargs = yargsCore(hideBin(process.argv));
 
-theYargs
+yargs
    .command('list', 'Show all available templates', yargs => yargs,
       (argv) => $list(argv, config))
 
@@ -54,8 +54,8 @@ theYargs
       }),
       (argv) => $def(argv, config))
 
-theYargs
-   .wrap(theYargs.terminalWidth())
+yargs
+   .wrap(yargs.terminalWidth())
    .parse() ;
 
 // TODO: Use yargs in tests to work with commands
