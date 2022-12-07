@@ -1,9 +1,9 @@
 import { jest } from '@jest/globals';
 import { createTestingFolderScope, mockConsoleLog, mockProcessExit } from '../test/lib.mjs';
 
-import list from './list.mjs';
+import $list from './list.mjs';
 
-const folder = createTestingFolderScope('./list');
+const { folder } = createTestingFolderScope('./list');
 
 describe('"List" command', () => { 
     let stdout;
@@ -14,7 +14,7 @@ describe('"List" command', () => {
     });
 
     test('should show list of templates', async () => {
-        list({}, { TPL_FOLDER: folder('./templates_three') });
+        $list({}, { TPL_FOLDER: folder('./templates_three') });
 
         expect(stdout).toEqual([
             '',
@@ -25,7 +25,7 @@ describe('"List" command', () => {
     });
 
     test('should print no templates if folder is free', async () => {
-        list({}, { TPL_FOLDER: folder('./templates_none') });
+        $list({}, { TPL_FOLDER: folder('./templates_none') });
 
         expect(stdout).toEqual([
             '',
