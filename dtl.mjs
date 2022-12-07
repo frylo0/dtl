@@ -31,7 +31,6 @@ yargs
    .command('list', 'Show all available templates', yargs => yargs,
       (argv) => $list(argv, config))
 
-
    .command('new <templateName> <folderName>', 'Creates directory with template contents', yargs => yargs
       .positional('templateName', {
          describe: `Name of template folder from "${config.TPL_FOLDER}"`
@@ -40,7 +39,6 @@ yargs
          describe: 'Name of folder to be created'
       }),
       (argv) => $new(argv, config))
-
 
    .command('def <templateName> <name> [files..]', 'Creates new template from given files. If no files given looks for folder with <name> to use it as base of template', yargs => yargs
       .positional('templateName', {
