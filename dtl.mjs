@@ -27,8 +27,6 @@ import runList from './commands/list.mjs';
 
 const config = loadConfig();
 
-export const TPL_FOLDER = config["Templates location"];
-
 
 function relatizePath(filenameAbs) {
    return path.relative(process.cwd(), filenameAbs);
@@ -169,7 +167,7 @@ if (!fs.existsSync(TPL_FOLDER)) {
 yargs(hideBin(process.argv))
 
    .command('list', 'Show all available templates', yargs => yargs,
-      runList)
+      (argv) => runList(argv, config))
 
    .command('new <templateName> <folderName>', 'Creates directory with template contents', yargs => yargs
       .positional('templateName', {
@@ -178,8 +176,7 @@ yargs(hideBin(process.argv))
       .positional('folderName', {
          describe: 'Name of folder to be created'
       }),
-
-      runNew)
+      (argv) => runNew(argv, config))
 
    .command('def <name> <files..>', 'Creates new template from given files', yargs => yargs
       .positional('name', {

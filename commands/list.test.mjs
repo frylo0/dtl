@@ -1,32 +1,35 @@
-import process from 'process';
 import { jest } from '@jest/globals';
-import { mockTemplateFolder } from '../test/lib.mjs';
+import { createTestingFolderScope, mockConsoleLog, mockProcessExit } from '../test/lib.mjs';
 
-mockTemplateFolder('./list/templates');
+import list from './list.mjs';
 
-const { default: runList } = await import('./list.mjs');
-
+const folder = createTestingFolderScope('./list');
 
 describe('"List" command', () => { 
     let stdout;
 
     beforeEach(() => {
-        jest.spyOn(process, 'exit').mockImplementation(() => {});
-        jest.spyOn(console, 'log').mockImplementation((...messages) => {
-            stdout.push(messages.join(' '));                
-        });
-
-        stdout = [];
+        mockProcessExit();
+        stdout = mockConsoleLog();
     });
 
     test('should show list of templates', async () => {
-        runList();
+        list({}, { TPL_FOLDER: folder('./templates_three') });
 
         expect(stdout).toEqual([
-            '', 
+            '',
             '- Template1', 
             '- Template2', 
             '- Template3'
+        ]);
+    });
+
+    test('should print no templates if folder is free', async () => {
+        list({}, { TPL_FOLDER: folder('./templates_none') });
+
+        expect(stdout).toEqual([
+            '',
+            'No templates created yet...', 
         ]);
     });
     

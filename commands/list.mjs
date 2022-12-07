@@ -1,15 +1,17 @@
 import fs from 'fs';
 import process from 'process';
 
-import { TPL_FOLDER } from '../dtl.mjs';
-
-
-export default async function (argv) {
+export default async function (argv, { TPL_FOLDER }) {
     const templates = fs.readdirSync(TPL_FOLDER);
-
-    console.log('');
-    for (const name of templates)
-        console.log(`- ${name}`);
+    
+    if (templates.length === 0) {
+        console.log('');
+        console.log('No templates created yet...');
+    } else {
+        console.log('');
+        for (const name of templates)
+            console.log(`- ${name}`);
+    }
 
     process.exit();
 }

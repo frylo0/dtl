@@ -23,8 +23,10 @@ export function loadConfig(configLocation = defaultConfigLocation) {
         );
         process.exit();
     }
+    
+    let variables = {
+        TPL_FOLDER: config["Templates location"].replace(/^~/, os.homedir()),
+    };
 
-    config["Templates location"] = config["Templates location"].replace(/^~/, os.homedir());
-
-    return config;
+    return variables;
 }
