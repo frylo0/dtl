@@ -1,6 +1,8 @@
-import { ERROR } from "./errors.mjs";
 import fs from 'fs';
 import path from 'path';
+
+import { ERROR } from "./errors.mjs";
+import { RegExpEscape } from "./regexp.mjs";
 
 
 export function kebabcase(str) {
@@ -70,4 +72,15 @@ export function insertData(fileContent, name, templateApi) {
         .replace(/--na-me--/g, kebabcase(name))
 
         .replace(/--DateTime--/g, `${year}-${month}-${day}, ${now.toLocaleTimeString()}`);
+}
+
+export function templateFromString(string, name) {
+    string = string
+        .replace(new RegExp(RegExpEscape(name), 'g'), '--Name--')
+        .replace(new RegExp(RegExpEscape(lowercase(name)), 'g'), '--name--')
+        .replace(new RegExp(RegExpEscape(uppercase(name)), 'g'), '--NAME--')
+        .replace(new RegExp(RegExpEscape(kebabcase(name)), 'g'), '--na-me--')
+        .replace(new RegExp(RegExpEscape(camelcase(name)), 'g'), '--naMe--')
+    
+    return string;
 }

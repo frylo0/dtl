@@ -1,9 +1,12 @@
+import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
+
+import { insertData, templateFromString } from './syntax.mjs';
 import { genWarn, logError, logInfo } from './logger.mjs';
 import { relatizePath } from "./path.mjs";
 import { ask } from './prompt.mjs';
-import { insertData } from './syntax.mjs';
+import { ERROR } from './errors.mjs';
 
 export default function (config) {
 	const { TPL_FOLDER } = config;
@@ -85,11 +88,53 @@ export default function (config) {
 			}
 		}
 	}
+	
+	/**
+	 * Creates template in TPL_FOLDER by given name to replace in files and files to be base of template
+	 * @param {string} nameToBeReplaced 
+	 * @param {string[]} filesRelList
+	 * @param {string} templateName
+	 */
+	function createFrom(nameToBeReplaced, filesRelList, templateName) {
+		const templatePath = path.join(TPL_FOLDER, templateName);
+
+		/**
+		 * @type {{
+		 *   relPath: string,
+		 *   absPath: string,
+		 *   basename: string,
+		 *   pathInTemplate: string,
+		 * }[]}
+		 */
+		const files = filesRelList.map(file => ({
+			relPath: file,
+			absPath: path.join(process.cwd(), file),
+			basename: path.basename(path.join(process.cwd(), file)),
+			pathInTemplate: path.join(templatePath, templateFromString(file, nameToBeReplaced)),
+		}));
+		
+		for (const file of files) {
+			const stat = fs.statSync(file.absPath);
+			
+			if (stat.isDirectory()) { // is dir
+				fs.mkdirSync(file.pathInTemplate);
+
+				const subFiles = fs.readdirSync(file.absPath).map(subFile => path.join(file.relPath, subFile));
+				createFrom(nameToBeReplaced, subFiles, templateName);
+			} else { // is file
+				let content = fs.readFileSync(file.absPath).toString();
+				content = templateFromString(content, nameToBeReplaced);
+				
+				fs.writeFileSync(file.pathInTemplate, content);
+			}
+		}
+	}
 
 	const api = {
 		checkExists,
 		getPath,
 		instantiate,
+		createFrom,
 	};
 
 	return api;

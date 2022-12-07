@@ -40,5 +40,23 @@ yargs(hideBin(process.argv))
       }),
       (argv) => $new(argv, config))
 
+
+   .command('def <templateName> <name> [files..]', 'Creates new template from given files', yargs => yargs
+      .positional('templateName', {
+         describe: `The name of result template`
+      })
+      .positional('name', {
+         describe: `Name in pascal case to be replaced in given files in all available DTL cases`
+      })
+      .positional('files', {
+         describe: 'Files to be added to template, usually you will add a single folder. All given files will be placed into template root.'
+      }),
+      (argv) => $def(argv, config))
+
       
    .parse();
+
+// TODO: Use yargs in tests to work with commands
+// TODO: Add tests to file exists cases
+// TODO: Add tests to cancel cases
+// TODO: Add tests for partial replacement for $new command
