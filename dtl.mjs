@@ -54,9 +54,13 @@ yargs
 
 yargs
    .wrap(yargs.terminalWidth())
-   .parse() ;
+   .parse();
 
 // TODO: Use yargs in tests to work with commands
 // TODO: Add tests to file exists cases
 // TODO: Add tests to cancel cases
 // TODO: Add tests for partial replacement for $new command
+// TODO: Add tests for syntax checks of $new command
+// TODO: Use inquire.js for prompts
+// TODO: Add bin file to package.json
+// TODO: Terminal autocomplete
