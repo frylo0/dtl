@@ -55,11 +55,12 @@ export function insertData(fileContent, name, templateApi) {
 
             else {
                 let content = fs.readFileSync(filePathAbs).toString();
-
+                
                 content = content
                     .split('\n')
                     .map(line => indent + line)
-                    .join('\n'); // indent all lines
+                    .join('\n') // indent all lines
+                    .replace(/\n$/, ''); // replace extra indent in the end
 
                 return insertData(content, name, templateApi);
             }
@@ -71,7 +72,7 @@ export function insertData(fileContent, name, templateApi) {
         .replace(/--NAME--/g, uppercase(name))
         .replace(/--na-me--/g, kebabcase(name))
 
-        .replace(/--DateTime--/g, `${year}-${month}-${day}, ${now.toLocaleTimeString()}`);
+        .replace(/--DateTime--/g, `${year}-${month}-${day}, ${now.toLocaleTimeString().replace(' ', ' ')}`);
 }
 
 export function templateFromString(string, name) {
