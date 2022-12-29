@@ -1,6 +1,6 @@
 {
   "name": "dtl",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Directory TempLate engine. Generates directories by predefined templates",
   "main": "dtl.mjs",
   "type": "module",
