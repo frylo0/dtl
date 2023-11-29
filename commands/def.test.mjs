@@ -9,7 +9,7 @@ const config = {
     TPL_FOLDER: folder('./templates'),
 };
 
-describe('"New" command', () => { 
+describe('"Def" command', () => { 
     let stdout;
 
     beforeEach(() => {

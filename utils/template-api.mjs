@@ -88,7 +88,7 @@ export default function (config) {
 			}
 		}
 	}
-	
+
 	/**
 	 * Creates template in TPL_FOLDER by given name to replace in files and files to be base of template
 	 * @param {string} nameToBeReplaced 
@@ -112,10 +112,10 @@ export default function (config) {
 			basename: path.basename(path.join(process.cwd(), file)),
 			pathInTemplate: path.join(templatePath, templateFromString(file, nameToBeReplaced)),
 		}));
-		
+
 		for (const file of files) {
 			const stat = fs.statSync(file.absPath);
-			
+
 			if (stat.isDirectory()) { // is dir
 				fs.mkdirSync(file.pathInTemplate);
 
@@ -124,8 +124,55 @@ export default function (config) {
 			} else { // is file
 				let content = fs.readFileSync(file.absPath).toString();
 				content = templateFromString(content, nameToBeReplaced);
-				
+
 				fs.writeFileSync(file.pathInTemplate, content);
+			}
+		}
+	}
+
+
+	/**
+	 * Renames entity in-place by given old-name and new-name
+	 * @param {string} nameToBeReplaced 
+	 * @param {string} nameToBeInserted
+	 * @param {string[]} filesRelList
+	 */
+	function rename(nameToBeReplaced, nameToBeInserted, filesRelList) {
+		const files = filesRelList.map(file => {
+			const newRelPath = insertData( // Replacing tmp template name to real new one
+				templateFromString(file, nameToBeReplaced), // Creating tmp template name
+				nameToBeInserted,
+				api
+			);
+
+			return {
+				relPath: file,
+				absPath: path.join(process.cwd(), file),
+
+				basename: path.basename(path.join(process.cwd(), file)),
+
+				newRelPath: newRelPath,
+				newAbsPath: path.join(process.cwd(), newRelPath)
+			};
+		});
+
+		for (const file of files) {
+			const stat = fs.statSync(file.absPath);
+
+			fs.renameSync(file.absPath, file.newAbsPath);
+
+			if (stat.isDirectory()) { // is dir
+				const subFiles = fs.readdirSync(file.newAbsPath).map(subFile => path.join(file.newRelPath, subFile));
+				rename(nameToBeReplaced, nameToBeInserted, subFiles);
+			} else { // is file
+				let content = fs.readFileSync(file.newAbsPath).toString();
+				content = insertData(
+					templateFromString(content, nameToBeReplaced), 
+					nameToBeInserted,
+					api
+				);
+
+				fs.writeFileSync(file.newAbsPath, content);
 			}
 		}
 	}
@@ -135,6 +182,7 @@ export default function (config) {
 		getPath,
 		instantiate,
 		createFrom,
+		rename,
 	};
 
 	return api;
