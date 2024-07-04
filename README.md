@@ -2,12 +2,23 @@
 
 > Create code folders faster for any language!
 
+- [✍️ Usage examples](#️-usage-examples)
+- [🧠 Basic concepts](#-basic-concepts)
+- [💻 Commands](#-commands)
+  - [❇️ def](#️-def)
+  - [❇️ new](#️-new)
+  - [❇️ list](#️-list)
+  - [❇️ ren](#️-ren)
+  - [❇️ dup](#️-dup)
+- [💬 Template syntax](#-template-syntax)
+
 ## ✍️ Usage examples
 
 ```bash
 dtl def ReactComponent ComponentInProject # saves template named "ReactComponent" based on ComponentInProject folder
 dtl new ReactComponent MyComponent # generates lot of files based on "ReactComponent" template
 dtl ren MyComponent SuperComponent # rename files and occurrences of "MyComponent" in any letter case in files
+dtl dup MyComponent SimilarComponent # creates copy of "MyComponent" and renames it, but not in place like `ren` command
 ```
 
 ## 🧠 Basic concepts
@@ -93,6 +104,29 @@ Renames filenames and occurrences in files from <name> to <newName> in any lette
 ```bash
 dtl ren OldComponent NewComponent # Renames OldComponent to NewComponent
 dtl ren OldName NewName SomeFolder # Renames all occurrences of OldName to NewName in SomeFolder
+```
+
+### ❇️ dup
+
+Creates copy of component and renames it. This command allows you not to create templates for components that you don't gonna copy often.
+
+**Syntax:**
+
+```
+dtl dup <name> <newName> [files..]
+
+Copy files and renames filenames and occurrences in files from <name> to <newName> in any letter case.
+
+* name - The current name of entity in pascal case. This name will be replaced, no matter in what letter case it will be found. If no files provided, also directory to be used as template base.
+* newName - Value in pascal case to be set instead on <name>. This value will be converted to matching letter case.
+* files - Files to be using while renaming, usually you will add a single folder.
+```
+
+**Examples:**
+
+```bash
+dtl ren OldComponent NewComponent # Creates copy of OldComponent with name NewComponent
+dtl ren OldComponent NewComponent OldComponent.tsx # Creates file NewComponent.tsx near to OldComponent.tsx
 ```
 
 ## 💬 Template syntax
