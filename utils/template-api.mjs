@@ -177,12 +177,59 @@ export default function (config) {
 		}
 	}
 
+
+	/**
+	 * Creates a copy of files replacing names. Works like function replace but not in place.
+	 * @param {string} nameToBeReplaced 
+	 * @param {string} nameToBeInserted
+	 * @param {string[]} sourceFiles
+	 */
+	function duplicate(nameToBeReplaced, nameToBeInserted, sourceFiles) {
+		const files = sourceFiles.map(file => {
+			const newRelPath = insertData( // Replacing tmp template name to real new one
+				templateFromString(file, nameToBeReplaced), // Creating tmp template name
+				nameToBeInserted,
+				api
+			);
+
+			return {
+				relPath: file,
+				absPath: path.join(process.cwd(), file),
+
+				basename: path.basename(path.join(process.cwd(), file)),
+
+				newRelPath: newRelPath,
+				newAbsPath: path.join(process.cwd(), newRelPath)
+			};
+		});
+
+		for (const file of files) {
+			const stat = fs.statSync(file.absPath);
+
+			if (stat.isDirectory()) { // is dir
+				fs.mkdirSync(file.newAbsPath);
+				const subFiles = fs.readdirSync(file.absPath).map(subFile => path.join(file.relPath, subFile));
+				duplicate(nameToBeReplaced, nameToBeInserted, subFiles);
+			} else { // is file
+				let content = fs.readFileSync(file.absPath).toString();
+				content = insertData(
+					templateFromString(content, nameToBeReplaced), 
+					nameToBeInserted,
+					api
+				);
+
+				fs.writeFileSync(file.newAbsPath, content);
+			}
+		}
+	}
+
 	const api = {
 		checkExists,
 		getPath,
 		instantiate,
 		createFrom,
 		rename,
+		duplicate,
 	};
 
 	return api;

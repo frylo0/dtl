@@ -17,7 +17,7 @@ import $new from './commands/new.mjs';
 import $list from './commands/list.mjs';
 import $def from './commands/def.mjs';
 import $ren from './commands/ren.mjs';
-
+import $dup from './commands/dup.mjs';
 
 const config = loadConfig();
 
@@ -64,6 +64,18 @@ yargs
          describe: 'Files to be using while renaming, usually you will add a single folder.'
       }),
       (argv) => $ren(argv, config))
+
+   .command('dup <name> <newName> [files..]', 'Duplicate files. Copy files and replace <name> in content and filenames with <newName>.', yargs => yargs
+      .positional('name', {
+         describe: `The current name of entity in pascal case. This name will be replaced, no matter in what letter case it will be found. If no files provided, also directory to be used as template base.`
+      })
+      .positional('newName', {
+         describe: `Value in pascal case to be set instead on <name>. This value will be converted to matching letter case.`
+      })
+      .positional('files', {
+         describe: 'Files to be using while renaming, usually you will add a single folder.'
+      }),
+      (argv) => $dup(argv, config))
 
 yargs
    .wrap(yargs.terminalWidth())
