@@ -32,44 +32,46 @@ export default function (config) {
 
 	/**
 	 * Recursively create files by given template path in target folder.
-	 * @param {string} dirpathSrc Absolute path to template directory.
-	 * @param {string} dirpathTarget Relative path to target dir in current base directory.
-	 * @this {string} Base directory for relative dirpathTarget path. Usually `process.cwd()`.
+	 * @param {string} templatePathAbs Absolute path to template directory.
+	 * @param {string} distPathAbs Relative path to target dir in current base directory.
+	 * @this {string} The Name in a generated files
 	 */
-	async function instantiate(dirpathSrc, dirpathTarget) {
-		dirpathTarget = insertData(dirpathTarget, this, api);
+	async function instantiate(templatePathAbs, distPathAbs) {
+		const Name = this;
+
+		distPathAbs = insertData(distPathAbs, Name, api);
 
 		// For each file in current folder
-		for (let filename of fs.readdirSync(dirpathSrc)) {
+		for (let filename of fs.readdirSync(templatePathAbs)) {
 			if (filename === '.' || filename == '..') // Skip relative dirs
 				continue;
 
-			const filepathSrc = path.join(dirpathSrc, filename);
-			const filepathTarget = path.join(dirpathTarget, insertData(filename, this, api));
-			const filepathTargetRel = `./${relatizePath(filepathTarget)}`;
+			const templateFileAbs = path.join(templatePathAbs, filename);
+			const distFileAbs = path.join(distPathAbs, insertData(filename, Name, api));
+			const distFileRel = `./${relatizePath(distFileAbs)}`;
 
-			const stat = fs.statSync(filepathSrc);
-			const isTargetExists = fs.existsSync(filepathTarget);
+			const templateFileIsDir = fs.statSync(templateFileAbs).isDirectory();
+			const isTargetExists = fs.existsSync(distFileAbs);
 
-			if (stat.isDirectory()) { // if directory
+			if (templateFileIsDir) {
 				if (isTargetExists) {
-					await ask(genWarn(['Target directory exists', 'Replace? (yes|no|y|n): '], filepathTargetRel),
+					await ask(genWarn(['Target directory exists', 'Replace? (yes|no|y|n): '], distFileRel),
 						() => {
-							fs.rmSync(filepathTarget, { recursive: true });
-							fs.mkdirSync(filepathTarget);
+							fs.rmSync(distFileAbs, { recursive: true });
+							fs.mkdirSync(distFileAbs);
 						},
 						() => logInfo('Replacement skipped. Walking deeper...'));
 				} else {
-					fs.mkdirSync(filepathTarget);
+					fs.mkdirSync(distFileAbs);
 				}
 
-				await instantiate.bind(this)(filepathSrc, filepathTarget);
+				await instantiate.bind(Name)(templateFileAbs, distFileAbs);
 			}
 			else { // is file
 				let isRewriteAllowed = true;
 
 				if (isTargetExists) {
-					await ask(genWarn(['Target file exists', 'Rewrite? (yes|no|y|n): '], filepathTargetRel),
+					await ask(genWarn(['Target file exists', 'Rewrite? (yes|no|y|n): '], distFileRel),
 						() => { isRewriteAllowed = true; },
 						() => {
 							isRewriteAllowed = false;
@@ -80,10 +82,10 @@ export default function (config) {
 				if (isRewriteAllowed) {
 					let content;
 
-					content = fs.readFileSync(filepathSrc).toString();
-					content = insertData(content, this, api);
+					content = fs.readFileSync(templateFileAbs).toString();
+					content = insertData(content, Name, api);
 
-					fs.writeFileSync(filepathTarget, content);
+					fs.writeFileSync(distFileAbs, content);
 				}
 			}
 		}

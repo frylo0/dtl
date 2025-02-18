@@ -3,7 +3,7 @@ import { createTestingFolderScope, expectedFolderMatch, mockConsoleLog, mockProc
 
 import $new from './new.mjs';
 
-const { folder, clearFolder } = createTestingFolderScope('./new');
+const { folder, clearFolder, createFolder } = createTestingFolderScope('./new');
 const config = {
     TPL_FOLDER: folder('./templates'),
 };
@@ -22,6 +22,14 @@ describe('"New" command', () => {
         $new({ templateName: 'ReactComponent', folderName: 'SomeName' }, { ...config });
 
         expectedFolderMatch(folder('./dist/SomeName'), folder('./expected/SomeName'));
+    });
+
+    test('should create files when folderName is deep', async () => {
+        createFolder('./dist/we/are/going/deeper');
+
+        $new({ templateName: 'ReactComponent', folderName: './we/are/going/deeper/SomeName' }, { ...config });
+
+        expectedFolderMatch(folder('./dist/we/are/going/deeper/SomeName'), folder('./expected/deep-case/SomeName'));
     });
     
     afterEach(() => {
