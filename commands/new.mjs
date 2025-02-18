@@ -1,4 +1,5 @@
 import process from 'process';
+import path from 'path';
 
 import { ERROR } from "../utils/errors.mjs";
 import { logOk } from "../utils/logger.mjs";
@@ -10,9 +11,13 @@ export default async function (argv, config) {
     try {
         template.checkExists(argv.templateName);
 
-        await template.instantiate.bind(argv.folderName)(
+        const distPathRel = argv.folderName;
+        const Name = path.basename(distPathRel);
+        const cwdAddon = path.dirname(distPathRel);
+
+        await template.instantiate.bind(Name)(
             template.getPath(argv.templateName),
-            process.cwd()
+            path.join(process.cwd(), cwdAddon),
         );
 
         logOk(`\nSuccessfully!\n`);

@@ -35,6 +35,9 @@ export function createTestingFolderScope(pathToFolder) {
             fs.rmSync(api.folder(pathToLocalFolder), { recursive: true, force: true });
             fs.mkdirSync(api.folder(pathToLocalFolder));
         },
+        createFolder: (pathToLocalFolder) => {
+            fs.mkdirSync(api.folder(pathToLocalFolder), { recursive: true });
+        },
         copyFolder: (oldPathToLocalFolder, newPathToLocalFolder) => {
             fs.cpSync(
                 api.folder(oldPathToLocalFolder), 
