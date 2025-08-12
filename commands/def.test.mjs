@@ -25,7 +25,7 @@ describe('"Def" command', () => {
         expectedFolderMatch(folder('./templates/ReactComponent'), folder('./expected/templates/ReactComponent'));
 
         mockProcessCwd(folder('./dist'));
-        $new({ templateName: 'ReactComponent', folderName: 'OtherName' }, config);
+        $new({ templateName: 'ReactComponent', name: 'OtherName' }, config);
         expectedFolderMatch(folder('./dist/OtherName'), folder('./expected/dist/OtherName'));
     });
     

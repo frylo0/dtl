@@ -32,12 +32,15 @@ yargs
    .command('list', 'Show all available templates', yargs => yargs,
       (argv) => $list(argv, config))
 
-   .command('new <templateName> <folderName>', 'Creates directory with template contents', yargs => yargs
+   .command('new <templateName> <name> [targetFolderPath]', 'Creates directory with template contents', yargs => yargs
       .positional('templateName', {
          describe: `Name of template folder from "${config.TPL_FOLDER}"`
       })
-      .positional('folderName', {
-         describe: 'Name of folder to be created'
+      .positional('name', {
+         describe: `Name in pascal case to be used in given template in all available DTL cases. Could be a path, if [targetFolderPath] not provided (in this case name will be taken as <name> of target folder)`
+      })
+      .positional('targetFolderPath', {
+         describe: 'Path to folder where to place generated template instance.'
       }),
       (argv) => $new(argv, config))
 
