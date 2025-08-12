@@ -59,18 +59,21 @@ Generates files by template name. Template could have multiple files at the root
 **Syntax:**
 
 ```
-dtl new <templateName> <folderName>
+dtl new <templateName> <name> [targetFolderName]
 
 Creates directory with template contents
 
 * templateName - Name of template
-* folderName - Name of folder to be created
+* name - Name in pascal case to be used in given template in all available DTL cases. Could be a path, if [targetFolderPath] not provided (in this case name will be taken as <name> of target folder)
+* targetFolderPath - Path to folder where to place generated template instance.
 ```
 
 **Examples:**
 
 ```bash
 dtl new TemplateName MyComponent # Creates component by template. All occurrences on name will be replaced to "MyComponent"
+dtl new TemplateName ./some/path/MyComponent # Instance placed into `./some/path/MyComponent`, `MyComponent` used as Name.
+dtl new TemplateName MyComponent ./some/path # Instance placed into `./some/path/MyComponent, `MyComponent` used as Name.
 ```
 
 ### ❇️ list
